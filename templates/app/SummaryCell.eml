@@ -1,19 +1,21 @@
-$[function SummaryCell(entity)]
+$[ function SummaryCell
+   (entity
+   ) ]
             NavigationLink(destination: ${entity.name}DetailView(${entity|name|uncapitalize}: item)) {
                 VStack(alignment: .leading, content: {
-        $[ let titleFieldName = "\"Can't find title field\"" ]
-        $[ if entity.hasAttributeNamed("title") && !(entity.attributeNamed("title")).isOptional ]
-            $[ let titleFieldName = "item.titleOrDefault" ]
-        $[ elseif entity.hasAttributeNamed("identifier") && !(entity.attributeNamed("identifier")).isOptional ]
-            $[ let titleFieldName = "item.identifierOrDefault" ]
-        $[/ if ]
+    $[ let titleFieldName = "\"Can't find title field\"" ]
+    $[ if entity.hasAttributeNamed("title") && !(entity.attributeNamed("title")).isOptional ]
+        $[ let titleFieldName = "item.titleOrDefault" ]
+    $[ elseif entity.hasAttributeNamed("identifier") && !(entity.attributeNamed("identifier")).isOptional ]
+        $[ let titleFieldName = "item.identifierOrDefault" ]
+    $[/ if ]
                     Text(${titleFieldName})
                         .summaryTitleTextStyle()
-        $[ if entity.hasAttributeNamed("description") ]
+    $[ if entity.hasAttributeNamed("description") ]
                     Text(item.descriptionOrDefault)
                         .summaryDescriptionTextStyle()
-        $[/ if ]
+    $[/ if ]
                 })
                 //.listRowSeparator(.visible).listRowSeparatorTint(separatorColor)
             }
-$[/function]
+$[/ function ]
