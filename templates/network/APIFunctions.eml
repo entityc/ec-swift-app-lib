@@ -1,0 +1,60 @@
+$[ function GetList
+   (entity,
+    relationship
+   ) ]
+    $[ let isGetBy = relationship != null ]
+    $[ let getByComment = "" ]
+    $[ let methodSuffix = "" ]
+    $[ let parentIdArg = "" ]
+    $[ let urlPathSuffix = "" ]
+    $[ let toEntity = relationship.to.entity ]
+    $[ if isGetBy ]
+        $[ capture getByComment ] BY ${toEntity|title}$[/ capture ]
+        $[ assert toEntity.hasPrimaryKey fatal ]${toEntity|name} must have a primary key!$[/ assert ]
+        $[ let toEntityPK = toEntity.primaryKeyAttribute ]
+        $[ capture methodSuffix ]By${toEntity|name}$[/ capture ]
+        $[ capture parentIdArg ]id: ${toEntityPK.type|language}, $[/ capture ]
+        $[ capture urlPathSuffix ]/${toEntity|domain:APIPath|name}/\(id)$[/ capture ]
+    $[/ if ]
+    //
+    // GET ${entity|title} LIST${getByComment}
+    //
+    func get${entity.name}List${methodSuffix}(${parentIdArg}completion: @escaping ([${entity.name}]?, Error?) -> Void) {
+        let urlString = restServerBaseUrl + "/${entity|domain:APIPath|name}${urlPathSuffix}?limit=10000"
+
+        guard let url = URL(string: urlString) else {
+            print("Invalid URL")
+            completion(nil, NSError(domain: "Invalid URL", code: 400, userInfo: nil))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                completion(nil, error)
+                return
+            }
+
+            do {
+                let returnedObject = try JSONDecoder().decode([${entity.name}].self, from: data)
+                completion(returnedObject, nil)
+            } catch let decodingError as DecodingError {
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch: \(type), context: \(context)")
+                case .valueNotFound(let type, let context):
+                    print("Value not found: \(type), context: \(context)")
+                case .keyNotFound(let key, let context):
+                    print("Key not found: \(key), context: \(context)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted: \(context)")
+                default:
+                    print("Other decoding error: \(decodingError)")
+                }
+            } catch let jsonError {
+                completion(nil, jsonError)
+            }
+        }.resume()
+    }
+$[/ function ]

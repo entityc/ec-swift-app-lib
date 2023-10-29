@@ -1,0 +1,32 @@
+$[ function DefaultConstant
+   (type
+   )->
+   (constant
+   ) ]
+    $[ let constant = "\"\"" ]
+    $[ switch type ]
+        $[ case date ]
+            $[ capture constant ]Date()$[/ capture ]
+        $[ case boolean ]
+            $[ capture constant ]false$[/ capture ]
+        $[ case int32 , int64 ]
+            $[ capture constant ]0$[/ capture ]
+        $[ case float , double ]
+            $[ capture constant ]0.0$[/ capture ]
+        $[ case enum ]
+            $[ let defaultItem = null]
+            $[ foreach item in type.items ]
+                $[ if item.hasTag("default") ]
+                    $[ let defaultItem = item]
+                    $[break];
+                $[/ if ]
+            $[/ foreach ]
+            $[if defaultItem == null]
+                $[let defaultItem = type.getItem(0)]
+            $[/if]
+            $[if defaultItem != null]
+                $[capture constant]${type.name}.${defaultItem|domain:JSONDTO|name}$[/capture]
+            $[/if]
+        $[ default ]
+    $[/ switch ]
+$[/ function ]

@@ -1,0 +1,69 @@
+$[ function SimpleListViewModel
+   (entity
+   )->
+   (viewModelClassName,
+    listVariableName
+   ) ]
+    $[ let viewModelClassName = entity|domain:SwiftClientViewModel|name ]
+class ${viewModelClassName}: ObservableObject {
+    $[ capture listVariableName ]${entity.name|uncapitalize}List$[/ capture ]
+    @Published var ${listVariableName}: [${entity.name}] = []
+    @Published var isLoading: Bool = false
+    @Published var error: Error?
+
+    $[ let clientApiClass = entity.module|domain:SwiftClientAPI|name|capitalize ]
+    $[ let clientApiVariable = clientApiClass|uncapitalize ]
+    private let ${clientApiVariable} = ${clientApiClass}()
+
+    func get${entity.name}List() {
+        isLoading = true
+        ${clientApiVariable}.get${entity.name}List { [weak self] objects, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                if let ${listVariableName} = objects {
+                    self?.${listVariableName} = ${listVariableName}
+                } else if let error = error {
+                    print ("ERROR: \(error.localizedDescription)")
+                    self?.error = error
+                }
+            }
+        }
+    }
+}
+$[/ function ]
+
+$[ function ChildListViewModel
+   (relationship
+   )->
+   (viewModelClassName,
+    listVariableName
+   ) ]
+    $[ let entity = relationship.from.entity ]
+    $[ let toEntity = relationship.to.entity ]
+    $[ capture viewModelClassName]${relationship|name|capitalize}By${entity|name}ViewModel$[/capture]
+class ${viewModelClassName}: ObservableObject {
+    $[ capture listVariableName ]${toEntity.name|uncapitalize}List$[/ capture ]
+    @Published var ${listVariableName}: [${toEntity.name}] = []
+    @Published var isLoading: Bool = false
+    @Published var error: Error?
+
+    $[ let clientApiClass = toEntity.module|domain:SwiftClientAPI|name|capitalize ]
+    $[ let clientApiVariable = clientApiClass|uncapitalize ]
+    private let ${clientApiVariable} = ${clientApiClass}()
+
+    func getList(id: UUID) -> Void {
+        isLoading = true
+        ${clientApiVariable}.get${toEntity.name}ListBy${entity|name}(id:id) { [weak self] objects, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                if let ${listVariableName} = objects {
+                    self?.${listVariableName} = ${listVariableName}
+                } else if let error = error {
+                    print ("ERROR: \(error.localizedDescription)")
+                    self?.error = error
+                }
+            }
+        }
+    }
+}
+$[/ function ]
