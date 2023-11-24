@@ -4,9 +4,9 @@ $[ function SummaryCell
             NavigationLink(destination: ${entity.name}DetailView(${entity|name|uncapitalize}: item)) {
                 VStack(alignment: .leading, content: {
     $[ let titleFieldName = "\"Can't find title field\"" ]
-    $[ if entity.hasAttributeNamed("title") && !(entity.attributeNamed("title")).isOptional ]
+    $[ if entity.hasAttributeNamed("title") ]
         $[ let titleFieldName = "item.titleOrDefault" ]
-    $[ elseif entity.hasAttributeNamed("identifier") && !(entity.attributeNamed("identifier")).isOptional ]
+    $[ elseif entity.hasAttributeNamed("identifier") ]
         $[ let titleFieldName = "item.identifierOrDefault" ]
     $[/ if ]
                     Text(${titleFieldName})

@@ -4,9 +4,14 @@ $[ D summary, main "This template generates the list view for each entity." ]
 $[ import "../util/DefaultConstant" ]
 $[ import "SummaryCell" ]
 $[ import "ListViewModels" ]
+$[ import "../util/ReleaseFunctions" ]
 
 $[ foreach module in space.modules if !module.isIncluded ]
     $[ foreach entity in module.entities if !entity.isImplicit && !entity.isExtern ]
+        $[ call CheckIfInReleasedRealm(entity: entity)->(isInReleasedRealm: isInReleasedRealm) ]
+        $[ if !isInReleasedRealm ]
+            $[ continue ]
+        $[/ if ]
         $[ capture viewName ]${entity.name}DetailView$[/ capture ]
         $[ let d_entity = entity|domain ]
         $[ let tabRelationships = @[]@ ]
@@ -70,7 +75,7 @@ $[/ send ]
             $[/ if ]
             List {
             $[ let d_attributeList = d_entity.declaredDomainAttributes ]
-            $[ foreach d_attribute in d_attributeList if !d_attribute.attribute.type.isEntityType && !d_attribute.attribute.isArray ]
+            $[ foreach d_attribute in d_attributeList if d_attribute.attribute != null && !d_attribute.attribute.type.isEntityType && !d_attribute.attribute.isArray ]
             Section() {
                 Text("${d_attribute|title|uppercase}")
                     .font(.footnote)

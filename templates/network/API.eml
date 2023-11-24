@@ -2,6 +2,7 @@ $[ language swift ]
 $[ domain SwiftClientAPI ]
 $[ D summary, main "This template generates code to access the an server API from a Swift client." ]
 $[ import "APIFunctions" ]
+$[ import "../util/ReleaseFunctions" ]
 
 $[ foreach module in space.modules if !module.isIncluded && module.hasPrimaryEntities ]
     $[ let className = module|domain:SwiftClientAPI|name|capitalize ]
@@ -26,6 +27,10 @@ class ${className} {
         self.restServerBaseUrl = RestServerBaseUrl.defaultValue
     }
         $[ foreach entity in module.entities if !entity.isImplicit && !entity.isExtern ]
+            $[ call CheckIfInReleasedRealm(entity: entity)->(isInReleasedRealm: isInReleasedRealm) ]
+            $[ if !isInReleasedRealm ]
+                $[ continue ]
+            $[/ if ]
 
     //
     // GET ${entity|title} BY ID
@@ -62,7 +67,7 @@ class ${className} {
                 $[ let allow = relationship.isParent ]
                 $[ if !allow && relationship.to.entity.hasRelationshipToEntityNamed(entity.name) ]
                     $[ let allow = true ]
-                    $[log info]Adding API for getting list of ${entity.name} by ${relationship.to.entity.name}$[/log]
+                    $[ log info ]Adding API for getting list of ${entity.name} by ${relationship.to.entity.name}$[/ log ]
                 $[/ if ]
                 $[ if allow ]
                     $[ call GetList(entity: entity, relationship: relationship) ]

@@ -3,8 +3,13 @@ $[ domain AdminUI ]
 $[ D summary, main "This template generates the list view for each entity." ]
 $[ import "SummaryCell" ]
 $[ import "ListViewModels" ]
+$[ import "../util/ReleaseFunctions" ]
 
 $[ foreach entity in space.entities if (entity|domain).hasTag("home") ]
+    $[ call CheckIfInReleasedRealm(entity: entity)->(isInReleasedRealm: isInReleasedRealm) ]
+    $[ if !isInReleasedRealm ]
+        $[ continue ]
+    $[/ if ]
     $[ capture viewName ]${entity.name}ListView$[/ capture ]
     $[ file "Summary" viewName "swift" ]
 //
