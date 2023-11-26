@@ -1,3 +1,39 @@
+$[ import "../util/ReleaseFunctions" ]
+$[ function GetById
+   (entity
+   ) ]
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+    //
+    // GET ${entity|title} BY ID
+    //
+    func get${entity.name}ById($[ if isReleasedEntity ]releaseId:UUID, $[/ if ]id: UUID, completion: @escaping (${entity.name}?, Error?) -> Void) {
+        let idStr = id.uuidString
+        let urlString = restServerBaseUrl + "/${entity|domain:APIPath|name}/\(idStr)?levels=0$[ if isReleasedEntity ]&releaseId=\(releaseId)$[/ if ]"
+        print("API: \(urlString)")
+
+        guard let url = URL(string: urlString) else {
+            print("Invalid URL")
+            completion(nil, NSError(domain: "Invalid URL", code: 400, userInfo: nil))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                completion(nil, error)
+                return
+            }
+
+            do {
+                let returnedObject = try JSONDecoder().decode(${entity.name}.self, from: data)
+                completion(returnedObject, nil)
+            } catch let jsonError {
+                completion(nil, jsonError)
+            }
+        }.resume()
+    }
+$[/ function ]
 $[ function GetList
    (entity,
     relationship
@@ -8,19 +44,22 @@ $[ function GetList
     $[ let parentIdArg = "" ]
     $[ let urlPathSuffix = "" ]
     $[ let toEntity = relationship.to.entity ]
+    $[ let isToReleasedEntity = false ]
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
     $[ if isGetBy ]
-        $[ capture getByComment ] BY ${toEntity|title}$[/ capture ]
+        $[ capture getByComment ] BY ${relationship|title}$[/ capture ]
         $[ assert toEntity.hasPrimaryKey fatal ]${toEntity|name} must have a primary key!$[/ assert ]
         $[ let toEntityPK = toEntity.primaryKeyAttribute ]
-        $[ capture methodSuffix ]By${toEntity|name}$[/ capture ]
+        $[ capture methodSuffix ]By${relationship|name|capitalize}$[/ capture ]
         $[ capture parentIdArg ]id: ${toEntityPK.type|language}, $[/ capture ]
-        $[ capture urlPathSuffix ]/${toEntity|domain:APIPath|name}/\(id)$[/ capture ]
+        $[ capture urlPathSuffix ]/${relationship|domain:APIPath|name}/\(id)$[/ capture ]
     $[/ if ]
     //
     // GET ${entity|title} LIST${getByComment}
     //
-    func get${entity.name}List${methodSuffix}(${parentIdArg}completion: @escaping ([${entity.name}]?, Error?) -> Void) {
-        let urlString = restServerBaseUrl + "/${entity|domain:APIPath|name}${urlPathSuffix}?limit=10000"
+    func get${entity.name}List${methodSuffix}($[ if isReleasedEntity ]releaseId:UUID, $[/ if ]${parentIdArg}completion: @escaping ([${entity.name}]?, Error?) -> Void) {
+        let urlString = restServerBaseUrl + "/${entity|domain:APIPath|name}${urlPathSuffix}?limit=10000&levels=0$[ if isReleasedEntity ]&releaseId=\(releaseId)$[/ if ]"
+        print("API: \(urlString)")
 
         guard let url = URL(string: urlString) else {
             print("Invalid URL")
@@ -39,21 +78,21 @@ $[ function GetList
             do {
                 let returnedObject = try JSONDecoder().decode([${entity.name}].self, from: data)
                 completion(returnedObject, nil)
-            } catch let decodingError as DecodingError {
-                switch decodingError {
-                case .typeMismatch(let type, let context):
-                    print("Type mismatch: \(type), context: \(context)")
-                case .valueNotFound(let type, let context):
-                    print("Value not found: \(type), context: \(context)")
-                case .keyNotFound(let key, let context):
-                    print("Key not found: \(key), context: \(context)")
-                case .dataCorrupted(let context):
-                    print("Data corrupted: \(context)")
-                default:
-                    print("Other decoding error: \(decodingError)")
-                }
+            } catch let DecodingError.dataCorrupted(context) {
+                print(context)
+            } catch let DecodingError.keyNotFound(key, context) {
+                print("Key '\(key)' not found:", context.debugDescription)
+                print("codingPath:", context.codingPath)
+            } catch let DecodingError.valueNotFound(value, context) {
+                print("Value '\(value)' not found:", context.debugDescription)
+                print("codingPath:", context.codingPath)
+            } catch let DecodingError.typeMismatch(type, context)  {
+                print("Type '\(type)' mismatch:", context.debugDescription)
+                print("codingPath:", context.codingPath)
             } catch let jsonError {
                 completion(nil, jsonError)
+            } catch {
+                print("error: ", error)
             }
         }.resume()
     }

@@ -184,9 +184,9 @@ $[ function CheckIfInReleasedRealm
    )->
    (isInReleasedRealm
    ) ]
-   $[call CheckIfReleasedEntity(entity:entity) -> (isReleasedEntity:isReleasedEntity)]
-   $[let isInReleasedRealm = isReleasedEntity || entity.hasTag("release:top") || entity.isSecondary]
-$[/function]
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+    $[ let isInReleasedRealm = isReleasedEntity || entity.hasTag("release:top") || entity.isSecondary ]
+$[/ function ]
 $[ function CheckIfReleasedEntity
    (entity
    )->
@@ -224,4 +224,18 @@ $[ function GetRelationshipToReleaseEntity
             $[ let relationship = entity.getRelationshipWithToEntity(releaseEntity) ]
         $[/ if ]
     $[/ if ]
+$[/ function ]
+
+$[ function GetReleaseEntity
+   (space
+   )->
+   (releaseEntity
+   ) ]
+    $[ let releaseEntity = null ]
+    $[ foreach entity in space.entities ]
+        $[ if entity.hasTag("release:top") ]
+            $[ let releaseEntity = entity ]
+            $[ break ]
+        $[/ if ]
+    $[/ foreach ]
 $[/ function ]

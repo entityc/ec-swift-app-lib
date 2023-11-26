@@ -12,6 +12,10 @@ $[ foreach module in space.modules if !module.isIncluded ]
         $[ if !isInReleasedRealm ]
             $[ continue ]
         $[/ if ]
+        $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+        $[ let releaseClassName = releaseEntity.name ]
+        $[ let releaseVariableName = releaseClassName|uncapitalize ]
         $[ capture viewName ]${entity.name}DetailView$[/ capture ]
         $[ let d_entity = entity|domain ]
         $[ let tabRelationships = @[]@ ]
@@ -42,6 +46,9 @@ import SwiftUI
 
             $[ let useTabs = tabRelationships.count > 0 ]
 struct ${viewName}: View {
+            $[ if isReleasedEntity ]
+    var ${releaseVariableName}: ${releaseClassName}
+            $[/ if ]
 $[ receive varDecl ]
     var ${inputVariable} : ${inputClass}
             $[ if useTabs ]
@@ -50,7 +57,10 @@ $[ receive varDecl ]
                 $[/ foreach ]
             $[/ if ]
 
-    init(${inputVariable} : ${inputClass}) {
+    init($[ if isReleasedEntity ]${releaseVariableName}: ${releaseClassName}, $[/ if ]${inputVariable} : ${inputClass}) {
+            $[ if isReleasedEntity ]
+        self.${releaseVariableName} = ${releaseVariableName}
+            $[/ if ]
         self.${inputVariable} = ${inputVariable}
     }
 
@@ -136,7 +146,7 @@ $[/ send ]
                     $[ call SummaryCell(entity: d_relationship.to.entity.entity) ]
                 }
                 .listStyle(PlainListStyle())
-                .onAppear { ${tabViewModelVariableNames.get(d_relationship#index)}.getList(id:${inputVariable}.id) }
+                .onAppear { ${tabViewModelVariableNames.get(d_relationship#index)}.getList($[ if isReleasedEntity ]releaseId: ${releaseVariableName}.id, $[/ if ]id:${inputVariable}.id) }
                     $[ if fieldName != null ]
                 .navigationTitle(${inputVariable}.${fieldName}OrDefault)
                     $[/ if ]

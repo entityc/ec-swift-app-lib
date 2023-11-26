@@ -4,12 +4,15 @@ $[ D summary, main "This template generates the list view for each entity." ]
 $[ import "SummaryCell" ]
 $[ import "ListViewModels" ]
 $[ import "../util/ReleaseFunctions" ]
-
+$[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+$[ let releaseClassName = releaseEntity.name ]
+$[ let releaseVariableName = releaseClassName|uncapitalize ]
 $[ foreach entity in space.entities if (entity|domain).hasTag("home") ]
     $[ call CheckIfInReleasedRealm(entity: entity)->(isInReleasedRealm: isInReleasedRealm) ]
     $[ if !isInReleasedRealm ]
         $[ continue ]
     $[/ if ]
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
     $[ capture viewName ]${entity.name}ListView$[/ capture ]
     $[ file "Summary" viewName "swift" ]
 //
@@ -27,6 +30,14 @@ struct ${viewName}: View {
     @StateObject private var viewModel = ${viewModelClassName}()
     @Environment(\.colorScheme) var colorScheme
 
+        $[ if releaseEntity.name != entity.name ]
+    var ${releaseVariableName} : ${releaseClassName}
+
+    init(${releaseVariableName} : ${releaseClassName}) {
+        self.${releaseVariableName} = ${releaseVariableName}
+    }
+
+        $[/ if ]
     var separatorColor: Color {
         colorScheme == .dark ? Color(white:0.7) : Color(white:0.3)
     }
@@ -37,13 +48,14 @@ struct ${viewName}: View {
         }
         .listStyle(PlainListStyle())
         .navigationTitle("${entity.name|plural|title}")
-        .onAppear(perform: viewModel.get${entity.name}List)
+        .onAppear { viewModel.get${entity.name}List($[if isReleasedEntity]releaseId:${releaseVariableName}.id$[/if]) }
     }
 }
 
+        $[ if !isInReleasedRealm ]
 #Preview {
     ${viewName}()
 }
-
+        $[/ if ]
     $[/ file ]
 $[/ foreach ]

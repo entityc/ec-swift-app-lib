@@ -65,11 +65,17 @@ class ${modelName}: Identifiable, Decodable {
     // RELATIONSHIPS
                 $[/ if ]
                 $[ if relationship.to.isOne ]
+                    $[ let optionality = "?" ]$[* since we want to have an object of each entity with just an ID we have to make everything optional *]
+                    $[ let toEntity = relationship.to.entity ]
+                    $[ call CheckIfReleasedEntity(entity: toEntity)->(isReleasedEntity: isReleasedEntity) ]
+                    $[ if !isReleasedEntity && !toEntity.hasTag("release:top")]
+                        $[ log warning ]Somehow this released entity has a relationship with a non-released entity: ${toEntity.name}. Ignoring it.$[/ log ]
+                        $[ continue ]
+                    $[/ if ]
 
                     $[ if relationship.hasDescription ]
     // ${relationship.description}
                     $[/ if ]
-                    $[ let optionality = relationship.isOptional ? "?":"" ]
     var ${relationship|domain:JSONDTO|name}: ${relationship.to.entity.name}${optionality}
                 $[/ if ]
             $[/ foreach ]

@@ -1,6 +1,7 @@
 $[ language swift ]
 $[ domain AdminUI ]
 $[ D summary, main "This template generates the top Home screen for the app." ]
+$[ import "../util/ReleaseFunctions" ]
 $[ let viewName = "AppHomeView" ]
 $[ file "" viewName "swift" ]
 //
@@ -18,21 +19,29 @@ struct MenuItem {
 
     func createView() -> some View {
         switch viewType {
-    $[ foreach entity in space.entities if (entity|domain).hasTag("home")]
+    $[ foreach entity in space.entities if (entity|domain).hasTag("home") ]
+        $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+        $[ if isReleasedEntity ]
+            $[ continue ]
+        $[/ if ]
         case is ${entity.name}ListView.Type:
             return AnyView(${entity.name}ListView())
     $[/ foreach ]
         default:
             print("unknown")
         }
-        return AnyView(${entity.name}ListView())
+        return AnyView(EmptyView())
     }
 }
 
 struct ${viewName}: View {
 
     let items: [MenuItem] = [
-    $[ foreach entity in space.entities if (entity|domain).hasTag("home")]
+    $[ foreach entity in space.entities if (entity|domain).hasTag("home") ]
+        $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+        $[ if isReleasedEntity ]
+            $[ continue ]
+        $[/ if ]
         MenuItem(      title: "${entity|title|plural}",
                  description: "${(entity|domain).tagValue("home:description")}",
                     viewType: ${entity.name}ListView.self),

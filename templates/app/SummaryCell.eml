@@ -1,7 +1,21 @@
+$[ import "../util/ReleaseFunctions" ]
 $[ function SummaryCell
-   (entity
+   (entity,
+    alternateDestView,
+    space
    ) ]
-            NavigationLink(destination: ${entity.name}DetailView(${entity|name|uncapitalize}: item)) {
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+    $[ if isReleasedEntity ]
+        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+        $[ let releaseClassName = releaseEntity.name ]
+        $[ let releaseVariableName = releaseClassName|uncapitalize ]
+    $[/ if ]
+    $[ if alternateDestView != null ]
+        $[ let destView = alternateDestView ]
+    $[ else ]
+        $[ capture destView ]${entity.name}DetailView$[/ capture ]
+    $[/ if ]
+            NavigationLink(destination: ${destView}($[if isReleasedEntity]${releaseVariableName}:${releaseVariableName}, $[/if]${entity|name|uncapitalize}: item)) {
                 VStack(alignment: .leading, content: {
     $[ let titleFieldName = "\"Can't find title field\"" ]
     $[ if entity.hasAttributeNamed("title") ]
@@ -16,6 +30,6 @@ $[ function SummaryCell
                         .summaryDescriptionTextStyle()
     $[/ if ]
                 })
-                //.listRowSeparator(.visible).listRowSeparatorTint(separatorColor)
+            $[*    //.listRowSeparator(.visible).listRowSeparatorTint(separatorColor) *]
             }
 $[/ function ]

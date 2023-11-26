@@ -28,40 +28,11 @@ class ${className} {
     }
         $[ foreach entity in module.entities if !entity.isImplicit && !entity.isExtern ]
             $[ call CheckIfInReleasedRealm(entity: entity)->(isInReleasedRealm: isInReleasedRealm) ]
+            $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
             $[ if !isInReleasedRealm ]
                 $[ continue ]
             $[/ if ]
-
-    //
-    // GET ${entity|title} BY ID
-    //
-    func get${entity.name}ById(id: UUID, completion: @escaping (${entity.name}?, Error?) -> Void) {
-        let idStr = id.uuidString
-        let urlString = restServerBaseUrl + "/${entity|domain:APIPath|name}/\(idStr)"
-
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL")
-            completion(nil, NSError(domain: "Invalid URL", code: 400, userInfo: nil))
-            return
-        }
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
-                completion(nil, error)
-                return
-            }
-
-            do {
-                let returnedObject = try JSONDecoder().decode(${entity.name}.self, from: data)
-                completion(returnedObject, nil)
-            } catch let jsonError {
-                completion(nil, jsonError)
-            }
-        }.resume()
-    }
-
+            $[ call GetById(entity: entity) ]
             $[ call GetList(entity: entity, relationship: null) ]
             $[ foreach relationship in entity.relationships if relationship.isParent ]
                 $[ let allow = relationship.isParent ]

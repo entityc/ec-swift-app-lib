@@ -1,11 +1,20 @@
+$[ import "../util/ReleaseFunctions" ]
 $[ function SimpleListViewModel
-   (entity
+   (entity,
+    alternateClassName,
+    space
    )->
    (viewModelClassName,
     listVariableName
    ) ]
-    $[ let viewModelClassName = entity|domain:SwiftClientViewModel|name ]
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+    $[ let viewModelClassName = alternateClassName != null ? alternateClassName:(entity|domain:SwiftClientViewModel|name) ]
 class ${viewModelClassName}: ObservableObject {
+    $[ if isReleasedEntity ]
+        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+        $[ let releaseClassName = releaseEntity.name ]
+        $[ let releaseVariableName = releaseClassName|uncapitalize ]
+    $[/ if ]
     $[ capture listVariableName ]${entity.name|uncapitalize}List$[/ capture ]
     @Published var ${listVariableName}: [${entity.name}] = []
     @Published var isLoading: Bool = false
@@ -15,9 +24,9 @@ class ${viewModelClassName}: ObservableObject {
     $[ let clientApiVariable = clientApiClass|uncapitalize ]
     private let ${clientApiVariable} = ${clientApiClass}()
 
-    func get${entity.name}List() {
+    func get${entity.name}List($[ if isReleasedEntity ]releaseId:UUID$[/ if ]) {
         isLoading = true
-        ${clientApiVariable}.get${entity.name}List { [weak self] objects, error in
+        ${clientApiVariable}.get${entity.name}List$[ if isReleasedEntity ](releaseId:releaseId)$[/ if ] { [weak self] objects, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let ${listVariableName} = objects {
@@ -33,15 +42,24 @@ class ${viewModelClassName}: ObservableObject {
 $[/ function ]
 
 $[ function ChildListViewModel
-   (relationship
+   (relationship,
+    space
    )->
    (viewModelClassName,
     listVariableName
    ) ]
     $[ let entity = relationship.from.entity ]
     $[ let toEntity = relationship.to.entity ]
-    $[ capture viewModelClassName]${relationship|name|capitalize}By${entity|name}ViewModel$[/capture]
+    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+    $[ capture viewModelClassName ]${relationship|name|capitalize}By${entity|name}ViewModel$[/ capture ]
 class ${viewModelClassName}: ObservableObject {
+    $[ if isReleasedEntity ]
+        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+        $[ let releaseClassName = releaseEntity.name ]
+        $[ let releaseVariableName = releaseClassName|uncapitalize ]
+    var ${releaseVariableName} : ${releaseClassName}?
+
+    $[/ if ]
     $[ capture listVariableName ]${toEntity.name|uncapitalize}List$[/ capture ]
     @Published var ${listVariableName}: [${toEntity.name}] = []
     @Published var isLoading: Bool = false
@@ -51,9 +69,9 @@ class ${viewModelClassName}: ObservableObject {
     $[ let clientApiVariable = clientApiClass|uncapitalize ]
     private let ${clientApiVariable} = ${clientApiClass}()
 
-    func getList(id: UUID) -> Void {
+    func getList($[ if isReleasedEntity ]releaseId:UUID, $[/ if ]id: UUID) -> Void {
         isLoading = true
-        ${clientApiVariable}.get${toEntity.name}ListBy${entity|name}(id:id) { [weak self] objects, error in
+        ${clientApiVariable}.get${toEntity.name}ListBy${relationship.reverseRelationship|name|capitalize}($[ if isReleasedEntity ]releaseId:releaseId, $[/ if ]id:id) { [weak self] objects, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let ${listVariableName} = objects {
