@@ -1,27 +1,28 @@
 $[ import "../util/ReleaseFunctions" ]
-$[ function SimpleListViewModel
-   (entity,
-    alternateClassName,
-    space
-   )->
-   (viewModelClassName,
-    listVariableName
-   ) ]
-    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
-    $[ let viewModelClassName = alternateClassName != null ? alternateClassName:(entity|domain:SwiftClientViewModel|name) ]
+$[ publisher org.entityc.swift.app.list.viewmodel ]
+    $[ function SimpleListViewModel
+       (entity,
+        alternateClassName,
+        space
+       )->
+       (viewModelClassName,
+        listVariableName
+       ) ]
+        $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+        $[ let viewModelClassName = alternateClassName != null ? alternateClassName:(entity|domain:SwiftClientViewModel|name) ]
 class ${viewModelClassName}: ObservableObject {
-    $[ if isReleasedEntity ]
-        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
-        $[ let releaseClassName = releaseEntity.name ]
-        $[ let releaseVariableName = releaseClassName|uncapitalize ]
-    $[/ if ]
-    $[ capture listVariableName ]${entity.name|uncapitalize}List$[/ capture ]
+        $[ if isReleasedEntity ]
+            $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+            $[ let releaseClassName = releaseEntity.name ]
+            $[ let releaseVariableName = releaseClassName|uncapitalize ]
+        $[/ if ]
+        $[ capture listVariableName ]${entity.name|uncapitalize}List$[/ capture ]
     @Published var ${listVariableName}: [${entity.name}] = []
     @Published var isLoading: Bool = false
     @Published var error: Error?
 
-    $[ let clientApiClass = entity.module|domain:SwiftClientAPI|name|capitalize ]
-    $[ let clientApiVariable = clientApiClass|uncapitalize ]
+        $[ let clientApiClass = entity.module|domain:SwiftClientAPI|name|capitalize ]
+        $[ let clientApiVariable = clientApiClass|uncapitalize ]
     private let ${clientApiVariable} = ${clientApiClass}()
 
     func get${entity.name}List($[ if isReleasedEntity ]releaseId:UUID$[/ if ]) {
@@ -30,7 +31,9 @@ class ${viewModelClassName}: ObservableObject {
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let ${listVariableName} = objects {
+$[ outlet listVariableAssignment ]
                     self?.${listVariableName} = ${listVariableName}
+$[/ outlet ]
                 } else if let error = error {
                     print ("ERROR: \(error.localizedDescription)")
                     self?.error = error
@@ -39,34 +42,34 @@ class ${viewModelClassName}: ObservableObject {
         }
     }
 }
-$[/ function ]
+    $[/ function ]
 
-$[ function ChildListViewModel
-   (relationship,
-    space
-   )->
-   (viewModelClassName,
-    listVariableName
-   ) ]
-    $[ let entity = relationship.from.entity ]
-    $[ let toEntity = relationship.to.entity ]
-    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
-    $[ capture viewModelClassName ]${relationship|name|capitalize}By${entity|name}ViewModel$[/ capture ]
+    $[ function ChildListViewModel
+       (relationship,
+        space
+       )->
+       (viewModelClassName,
+        listVariableName
+       ) ]
+        $[ let entity = relationship.from.entity ]
+        $[ let toEntity = relationship.to.entity ]
+        $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+        $[ capture viewModelClassName ]${relationship|name|capitalize}By${entity|name}ViewModel$[/ capture ]
 class ${viewModelClassName}: ObservableObject {
-    $[ if isReleasedEntity ]
-        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
-        $[ let releaseClassName = releaseEntity.name ]
-        $[ let releaseVariableName = releaseClassName|uncapitalize ]
+        $[ if isReleasedEntity ]
+            $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+            $[ let releaseClassName = releaseEntity.name ]
+            $[ let releaseVariableName = releaseClassName|uncapitalize ]
     var ${releaseVariableName} : ${releaseClassName}?
 
-    $[/ if ]
-    $[ capture listVariableName ]${toEntity.name|uncapitalize}List$[/ capture ]
+        $[/ if ]
+        $[ capture listVariableName ]${toEntity.name|uncapitalize}List$[/ capture ]
     @Published var ${listVariableName}: [${toEntity.name}] = []
     @Published var isLoading: Bool = false
     @Published var error: Error?
 
-    $[ let clientApiClass = toEntity.module|domain:SwiftClientAPI|name|capitalize ]
-    $[ let clientApiVariable = clientApiClass|uncapitalize ]
+        $[ let clientApiClass = toEntity.module|domain:SwiftClientAPI|name|capitalize ]
+        $[ let clientApiVariable = clientApiClass|uncapitalize ]
     private let ${clientApiVariable} = ${clientApiClass}()
 
     func getList($[ if isReleasedEntity ]releaseId:UUID, $[/ if ]id: UUID) -> Void {
@@ -75,7 +78,9 @@ class ${viewModelClassName}: ObservableObject {
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let ${listVariableName} = objects {
+$[ outlet listVariableAssignment ]
                     self?.${listVariableName} = ${listVariableName}
+$[/ outlet ]
                 } else if let error = error {
                     print ("ERROR: \(error.localizedDescription)")
                     self?.error = error
@@ -84,4 +89,5 @@ class ${viewModelClassName}: ObservableObject {
         }
     }
 }
-$[/ function ]
+    $[/ function ]
+$[/ publisher ]

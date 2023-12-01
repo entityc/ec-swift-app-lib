@@ -4,32 +4,40 @@ $[ function SummaryCell
     alternateDestView,
     space
    ) ]
-    $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
-    $[ if isReleasedEntity ]
-        $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
-        $[ let releaseClassName = releaseEntity.name ]
-        $[ let releaseVariableName = releaseClassName|uncapitalize ]
-    $[/ if ]
-    $[ if alternateDestView != null ]
-        $[ let destView = alternateDestView ]
-    $[ else ]
-        $[ capture destView ]${entity.name}DetailView$[/ capture ]
-    $[/ if ]
-            NavigationLink(destination: ${destView}($[if isReleasedEntity]${releaseVariableName}:${releaseVariableName}, $[/if]${entity|name|uncapitalize}: item)) {
+    $[ publisher org.entityc.swift.app.summary.cell ]
+        $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
+        $[ if isReleasedEntity ]
+            $[ call GetReleaseEntity()->(releaseEntity: releaseEntity) ]
+            $[ let releaseClassName = releaseEntity.name ]
+            $[ let releaseVariableName = releaseClassName|uncapitalize ]
+        $[/ if ]
+        $[ if alternateDestView != null ]
+            $[ let destView = alternateDestView ]
+        $[ else ]
+            $[ capture destView ]${entity.name}DetailView$[/ capture ]
+        $[/ if ]
+            // [Template] SummaryCell
+            NavigationLink(destination: ${destView}($[ if isReleasedEntity ]${releaseVariableName}:${releaseVariableName}, $[/ if ]${entity|name|uncapitalize}: item)) {
+        $[ let overrideCell = false ]
+$[ outlet body ]
+$[/ outlet ]
+        $[ if !overrideCell ]
                 VStack(alignment: .leading, content: {
-    $[ let titleFieldName = "\"Can't find title field\"" ]
-    $[ if entity.hasAttributeNamed("title") ]
-        $[ let titleFieldName = "item.titleOrDefault" ]
-    $[ elseif entity.hasAttributeNamed("identifier") ]
-        $[ let titleFieldName = "item.identifierOrDefault" ]
-    $[/ if ]
+            $[ let titleFieldName = "\"Can't find title field\"" ]
+            $[ if entity.hasAttributeNamed("title") ]
+                $[ let titleFieldName = "item.titleOrDefault" ]
+            $[ elseif entity.hasAttributeNamed("identifier") ]
+                $[ let titleFieldName = "item.identifierOrDefault" ]
+            $[/ if ]
                     Text(${titleFieldName})
                         .summaryTitleTextStyle()
-    $[ if entity.hasAttributeNamed("description") ]
+            $[ if entity.hasAttributeNamed("description") ]
                     Text(item.descriptionOrDefault)
                         .summaryDescriptionTextStyle()
-    $[/ if ]
+            $[/ if ]
                 })
+        $[/ if ]
             $[*    //.listRowSeparator(.visible).listRowSeparatorTint(separatorColor) *]
             }
+    $[/ publisher ]
 $[/ function ]

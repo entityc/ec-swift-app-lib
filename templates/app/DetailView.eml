@@ -27,8 +27,9 @@ $[ foreach module in space.modules if !module.isIncluded ]
             $[ do tabRelationships.add(d_relationship) ]
         $[/ foreach ]
         $[ file "Detail" viewName "swift" ]
-            $[ let inputClass = entity|name ]
-            $[ let inputVariable = inputClass|uncapitalize ]
+            $[ publisher org.entityc.swift.app.detail ]
+                $[ let inputClass = entity|name ]
+                $[ let inputVariable = inputClass|uncapitalize ]
 //
 //  ${viewName}.swift
 //
@@ -37,131 +38,146 @@ $[ foreach module in space.modules if !module.isIncluded ]
 
 import SwiftUI
 
-            $[ foreach d_relationship in tabRelationships ]
-                $[ call ChildListViewModel(relationship: d_relationship.relationship)->(viewModelClassName: viewModelClassName, listVariableName: listVariableName) ]
-                $[ do tabViewModelClassNames.add(viewModelClassName) ]
-                $[ do tabViewModelVariableNames.add(viewModelClassName|uncapitalize) ]
-                $[ do tabListVariableNames.add(listVariableName) ]
-            $[/ foreach ]
+                $[ foreach d_relationship in tabRelationships ]
+                    $[ call ChildListViewModel(relationship: d_relationship.relationship)->(viewModelClassName: viewModelClassName, listVariableName: listVariableName) ]
+                    $[ do tabViewModelClassNames.add(viewModelClassName) ]
+                    $[ do tabViewModelVariableNames.add(viewModelClassName|uncapitalize) ]
+                    $[ do tabListVariableNames.add(listVariableName) ]
+                $[/ foreach ]
 
-            $[ let useTabs = tabRelationships.count > 0 ]
+                $[ let useTabs = tabRelationships.count > 0 ]
 struct ${viewName}: View {
-            $[ if isReleasedEntity ]
+    @Environment(\.colorScheme) var colorScheme
+
+    var titleTextColor: Color {
+        colorScheme == .dark ? .white : .white
+    }
+    var titleBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.1, green: 0.2, blue: 0.5) : Color(red: 0.066, green: 0.573, blue: 0.8)
+    }
+    var valueTextColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+    var valueBackgroundColor: Color {
+        colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.9)
+    }
+                $[ if isReleasedEntity ]
     var ${releaseVariableName}: ${releaseClassName}
-            $[/ if ]
+                $[/ if ]
 $[ receive varDecl ]
     var ${inputVariable} : ${inputClass}
-            $[ if useTabs ]
-                $[ foreach d_relationship in tabRelationships ]
+                $[ if useTabs ]
+                    $[ foreach d_relationship in tabRelationships ]
     @StateObject private var ${tabViewModelVariableNames.get(d_relationship#index)} = ${tabViewModelClassNames.get(d_relationship#index)}()
-                $[/ foreach ]
-            $[/ if ]
+                    $[/ foreach ]
+                $[/ if ]
 
     init($[ if isReleasedEntity ]${releaseVariableName}: ${releaseClassName}, $[/ if ]${inputVariable} : ${inputClass}) {
-            $[ if isReleasedEntity ]
+                $[ if isReleasedEntity ]
         self.${releaseVariableName} = ${releaseVariableName}
-            $[/ if ]
+                $[/ if ]
         self.${inputVariable} = ${inputVariable}
     }
 
     var body: some View {
-            $[ if useTabs ]
+                $[ if useTabs ]
 $[ send varDecl ]
     @State private var selectedSegment = 0
 $[/ send ]
         VStack {
             Picker("", selection: $selectedSegment) {
                 Text("Info").tag(0)
-                $[ foreach d_relationship in tabRelationships ]
+                    $[ foreach d_relationship in tabRelationships ]
                 Text("${d_relationship|title}").tag((${d_relationship#index} + 1))
-                $[/ foreach ]
+                    $[/ foreach ]
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal)
 
-            $[/ if ]
-            $[ if useTabs ]
+                $[/ if ]
+                $[ if useTabs ]
         if selectedSegment == 0 {
-            $[/ if ]
+                $[/ if ]
             List {
-            $[ let d_attributeList = d_entity.declaredDomainAttributes ]
-            $[ foreach d_attribute in d_attributeList if d_attribute.attribute != null && !d_attribute.attribute.type.isEntityType && !d_attribute.attribute.isArray ]
+                $[ let d_attributeList = d_entity.declaredDomainAttributes ]
+                $[ foreach d_attribute in d_attributeList if d_attribute.attribute != null && !d_attribute.attribute.type.isEntityType && !d_attribute.attribute.isArray ]
             Section() {
                 Text("${d_attribute|title|uppercase}")
                     .font(.footnote)
                     .fontWeight(.black)
-                    .foregroundColor(.white)
+                    .foregroundColor(self.titleTextColor)
                     .multilineTextAlignment(.leading)
                     .padding(EdgeInsets(top: 8.0, leading: 12.0, bottom: 8.0, trailing: 12.0))
-                    .listRowBackground(Color(red: 0.1, green: 0.2, blue: 0.5))
+                    .listRowBackground(self.titleBackgroundColor)
 
-                $[ let useMarkdown = d_attribute.hasTag("markdown") ]
-                $[ let formatAsCode = d_attribute.hasTag("format:code") ]
-                $[ let type = d_attribute.attribute.type ]
-                $[ call DefaultConstant(type: type)->(constant: defaultValueForType) ]
-                $[ let fieldName = d_attribute|domain:JSONDTO|name ]
-                $[ let fieldExpr = inputVariable + "." + fieldName + "OrDefault" ]
-                $[ switch type ]
-                    $[ case date ]
-                        $[ capture fieldExpr ](${fieldExpr}).description$[/ capture ]
-                    $[ case enum ]
-                        $[ capture fieldExpr ](${fieldExpr}).rawValue$[/ capture ]
-                    $[ case string ]
-                    $[ default ]
-                        $[ let fieldExpr = "String(" + fieldExpr + ")" ]
-                $[/ switch ]
+                    $[ let useMarkdown = d_attribute.hasTag("markdown") ]
+                    $[ let formatAsCode = d_attribute.hasTag("format:code") ]
+                    $[ let type = d_attribute.attribute.type ]
+                    $[ call DefaultConstant(type: type)->(constant: defaultValueForType) ]
+                    $[ let fieldName = d_attribute|domain:JSONDTO|name ]
+                    $[ let fieldExpr = inputVariable + "." + fieldName + "OrDefault" ]
+                    $[ switch type ]
+                        $[ case date ]
+                            $[ capture fieldExpr ](${fieldExpr}).description$[/ capture ]
+                        $[ case enum ]
+                            $[ capture fieldExpr ](${fieldExpr}).rawValue$[/ capture ]
+                        $[ case string ]
+                        $[ default ]
+                            $[ let fieldExpr = "String(" + fieldExpr + ")" ]
+                    $[/ switch ]
                 let valueString = ${fieldExpr}
-                $[ if useMarkdown || formatAsCode ]
-                    $[ let valueStringExpr = "valueString" ]
-                    $[ if formatAsCode ]
-                        $[ capture valueStringExpr ]"`" + ${valueStringExpr} + "`"$[/ capture ]
-                    $[/ if ]
+                    $[ if useMarkdown || formatAsCode ]
+                        $[ let valueStringExpr = "valueString" ]
+                        $[ if formatAsCode ]
+                            $[ capture valueStringExpr ]"`" + ${valueStringExpr} + "`"$[/ capture ]
+                        $[/ if ]
                 let attributedString = (try? AttributedString(markdown: ${valueStringExpr})) ?? AttributedString(valueString)
-                $[/ if ]
+                    $[/ if ]
                 Text($[ if useMarkdown || formatAsCode ]attributedString$[ else ]valueString$[/ if ])
                     .font(.body)
-                    .foregroundColor(.white)
+                    .foregroundColor(self.valueTextColor)
                     .multilineTextAlignment(.leading)
                     .padding(EdgeInsets(top: 8.0, leading: 12.0, bottom: 8.0, trailing: 12.0))
-                    .listRowBackground(Color(white:0.2))
+                    .listRowBackground(self.valueBackgroundColor)
             }
             .listRowInsets(EdgeInsets())
 
-            $[/ foreach ]
+                $[/ foreach ]
             }
-            $[ let fieldName = null ]
-            $[ if entity.hasAttributeNamed("title") ]
-                $[ let fieldName = "title" ]
-            $[ elseif entity.hasAttributeNamed("identifier") ]
-                $[ let fieldName = "identifier" ]
-            $[/ if ]
-            $[ if fieldName != null ]
+                $[ let fieldName = null ]
+                $[ if entity.hasAttributeNamed("title") ]
+                    $[ let fieldName = "title" ]
+                $[ elseif entity.hasAttributeNamed("identifier") ]
+                    $[ let fieldName = "identifier" ]
+                $[/ if ]
+                $[ if fieldName != null ]
             .navigationTitle(${inputVariable}.${fieldName}OrDefault)
-            $[/ if ]
-            $[ if useTabs ]
+                $[/ if ]
+                $[ if useTabs ]
             }
-                $[ foreach d_relationship in tabRelationships ]
+                    $[ foreach d_relationship in tabRelationships ]
             else if selectedSegment == (${d_relationship#index} + 1) {
                 List(${tabViewModelVariableNames.get(d_relationship#index)}.${tabListVariableNames.get(d_relationship#index)}) { item in
-                    $[ call SummaryCell(entity: d_relationship.to.entity.entity) ]
+                        $[ call SummaryCell(entity: d_relationship.to.entity.entity) ]
                 }
                 .listStyle(PlainListStyle())
                 .onAppear { ${tabViewModelVariableNames.get(d_relationship#index)}.getList($[ if isReleasedEntity ]releaseId: ${releaseVariableName}.id, $[/ if ]id:${inputVariable}.id) }
-                    $[ if fieldName != null ]
+                        $[ if fieldName != null ]
                 .navigationTitle(${inputVariable}.${fieldName}OrDefault)
-                    $[/ if ]
+                        $[/ if ]
             }
-                $[/ foreach ]
-            $[/ if ]
-            $[ if useTabs ]
+                    $[/ foreach ]
+                $[/ if ]
+                $[ if useTabs ]
         }
-            $[/ if ]
+                $[/ if ]
     }
 }
 
 //#Preview {
 //    ${viewName}()
 //}
+            $[/ publisher ]
         $[/ file ]
     $[/ foreach ]
 $[/ foreach ]

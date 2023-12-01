@@ -29,6 +29,28 @@ extension View {
     }
 }
 
+struct SummarySubTitleTextStyle: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+
+    var titleColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+    func body(content: Content) -> some View {
+        content
+            .font(.headline)
+            .italic()
+            .foregroundColor(titleColor)
+            .padding(.top, 5.0)
+            .padding(.bottom, 5.0)
+    }
+}
+
+extension View {
+    func summarySubTitleTextStyle() -> some View {
+        self.modifier(SummarySubTitleTextStyle())
+    }
+}
+
 struct SummaryDescriptionTextStyle: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
 

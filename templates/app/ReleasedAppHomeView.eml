@@ -35,6 +35,7 @@ struct ReleasedMenuItem {
 }
 
 struct ${viewName}: View {
+    @Environment(\.colorScheme) var colorScheme
 
     var ${releaseVariableName} : ${releaseClassName}
 
@@ -43,15 +44,29 @@ struct ${viewName}: View {
     }
 
     let items: [ReleasedMenuItem] = [
-    $[ foreach entity in space.entities if (entity|domain).hasTag("home") && !entity.hasTag("release:top") ]
-        ReleasedMenuItem(      title: "${entity|title|plural}",
+    $[ foreach d_entity in (space.domain("AdminUI")).declaredDomainEntities if d_entity.hasTag("home") && !d_entity.entity.hasTag("release:top") ]
+        $[ let entity = d_entity.entity ]
+        $[ let title = entity|title|plural ]
+        $[ if (entity|domain).hasTag("title") ]
+            $[ let title = (entity|domain).tagValue("title")|plural ]
+        $[/ if ]
+        ReleasedMenuItem(      title: "${title}",
                  description: "${(entity|domain).tagValue("home:description")}",
                     viewType: ${entity.name}ListView.self),
     $[/ foreach ]
     ]
 
-    let cellColor = Color(red: 0.20, green: 0.3, blue: 0.8)
-    let subtitleColor = Color(white:0.85)
+    let kOrangeColor = Color(red: 0.953, green: 0.424, blue: 0.239)
+    let kBlueColor = Color(red: 0.066, green: 0.573, blue: 0.8)
+    var titleTextColor: Color {
+        colorScheme == .dark ? .white : .white
+    }
+    var cellBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.1, green: 0.2, blue: 0.5) : kBlueColor
+    }
+    var subtitleTextColor: Color {
+        colorScheme == .dark ? .white : .white
+    }
 
     var body: some View {
         List(items, id: \.title) { item in
@@ -59,15 +74,15 @@ struct ${viewName}: View {
                 VStack(alignment: .leading) {
                         Text(item.title)
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(titleTextColor)
                             .padding(.bottom, 8.0)
                         Text(item.description)
                             .font(.subheadline)
-                            .foregroundColor(subtitleColor)
+                            .foregroundColor(subtitleTextColor)
                     }
                     .padding()                // Add padding around each cell's content
                     .frame(maxWidth: .infinity, alignment: .leading)  // This ensures the VStack fills the width
-                    .background(cellColor)    // Set a background color
+                    .background(cellBackgroundColor)    // Set a background color
                     .cornerRadius(8)          // Optionally round the corners of each cell
                     .shadow(radius: 3)        // Optionally add a shadow
                     .padding(.horizontal)     // Add horizontal padding to create gaps between cells

@@ -12,9 +12,14 @@ $[ foreach entity in space.entities if (entity|domain).hasTag("home") ]
     $[ if !isInReleasedRealm ]
         $[ continue ]
     $[/ if ]
+    $[ let title = entity|title|plural ]
+    $[ if (entity|domain).hasTag("title") ]
+        $[ let title = (entity|domain).tagValue("title")|plural ]
+    $[/ if ]
     $[ call CheckIfReleasedEntity(entity: entity)->(isReleasedEntity: isReleasedEntity) ]
     $[ capture viewName ]${entity.name}ListView$[/ capture ]
     $[ file "Summary" viewName "swift" ]
+        $[ publisher org.entityc.swift.app.summary.list ]
 //
 //  ${viewName}.swift
 //
@@ -23,39 +28,45 @@ $[ foreach entity in space.entities if (entity|domain).hasTag("home") ]
 
 import SwiftUI
 
-        $[ call SimpleListViewModel(entity: entity)->(viewModelClassName: viewModelClassName, listVariableName: listVariableName) ]
+            $[ call SimpleListViewModel(entity: entity)->(viewModelClassName: viewModelClassName, listVariableName: listVariableName) ]
 
 struct ${viewName}: View {
 
     @StateObject private var viewModel = ${viewModelClassName}()
     @Environment(\.colorScheme) var colorScheme
 
-        $[ if releaseEntity.name != entity.name ]
+            $[ if releaseEntity.name != entity.name ]
     var ${releaseVariableName} : ${releaseClassName}
 
     init(${releaseVariableName} : ${releaseClassName}) {
         self.${releaseVariableName} = ${releaseVariableName}
     }
 
-        $[/ if ]
+            $[/ if ]
     var separatorColor: Color {
         colorScheme == .dark ? Color(white:0.7) : Color(white:0.3)
     }
 
     var body: some View {
         List(viewModel.${listVariableName}) { item in
-        $[ call SummaryCell() ]
+            $[ let overrideCell = false ]
+$[ outlet cell ]
+$[/ outlet ]
+            $[ if !overrideCell ]
+                $[ call SummaryCell() ]
+            $[/ if ]
         }
         .listStyle(PlainListStyle())
-        .navigationTitle("${entity.name|plural|title}")
-        .onAppear { viewModel.get${entity.name}List($[if isReleasedEntity]releaseId:${releaseVariableName}.id$[/if]) }
+        .navigationTitle("${title}")
+        .onAppear { viewModel.get${entity.name}List($[ if isReleasedEntity ]releaseId:${releaseVariableName}.id$[/ if ]) }
     }
 }
 
-        $[ if !isInReleasedRealm ]
+            $[ if !isInReleasedRealm ]
 #Preview {
     ${viewName}()
 }
-        $[/ if ]
+            $[/ if ]
+        $[/ publisher ]
     $[/ file ]
 $[/ foreach ]
