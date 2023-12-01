@@ -22,8 +22,12 @@ $[ foreach module in space.modules if !module.isIncluded ]
         $[ let tabViewModelClassNames = @[]@ ]
         $[ let tabViewModelVariableNames = @[]@ ]
         $[ let tabListVariableNames = @[]@ ]
+        $[ let defaultTabRelationship = null ]
         $[ foreach d_relationship in d_entity.declaredDomainRelationships if d_relationship.hasTag("detail") && d_relationship.hasTag("tab") ]
             $[ assert d_relationship.to.isMany fatal ]A detail tab can only be created for to-many relationships. ${entity.name}.${d_relationship.name} is not a to-many relationship.$[/ assert ]
+            $[ if d_relationship.hasTag("tab:default") ]
+                $[ let defaultTabRelationship = d_relationship ]
+            $[/ if ]
             $[ do tabRelationships.add(d_relationship) ]
         $[/ foreach ]
         $[ file "Detail" viewName "swift" ]
@@ -37,12 +41,15 @@ $[ foreach module in space.modules if !module.isIncluded ]
 //
 
 import SwiftUI
-
+                $[ let defaultTabIndex = 0 ]
                 $[ foreach d_relationship in tabRelationships ]
                     $[ call ChildListViewModel(relationship: d_relationship.relationship)->(viewModelClassName: viewModelClassName, listVariableName: listVariableName) ]
                     $[ do tabViewModelClassNames.add(viewModelClassName) ]
                     $[ do tabViewModelVariableNames.add(viewModelClassName|uncapitalize) ]
                     $[ do tabListVariableNames.add(listVariableName) ]
+                    $[ if d_relationship.relationship.name == defaultTabRelationship.relationship.name ]
+                        $[ capture defaultTabIndex]${d_relationship#index} + 1$[/capture]
+                    $[/ if ]
                 $[/ foreach ]
 
                 $[ let useTabs = tabRelationships.count > 0 ]
@@ -82,7 +89,7 @@ $[ receive varDecl ]
     var body: some View {
                 $[ if useTabs ]
 $[ send varDecl ]
-    @State private var selectedSegment = 0
+    @State private var selectedSegment = ${defaultTabIndex}
 $[/ send ]
         VStack {
             Picker("", selection: $selectedSegment) {
