@@ -89,6 +89,7 @@ struct ${viewName}: View {
                 }
         }
         .listStyle(PlainListStyle())  // This removes the default cell dividers
+        .navigationTitle(self.${releaseVariableName}.titleOrDefault)
     }
 }
 
