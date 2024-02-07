@@ -48,7 +48,7 @@ import SwiftUI
                     $[ do tabViewModelVariableNames.add(viewModelClassName|uncapitalize) ]
                     $[ do tabListVariableNames.add(listVariableName) ]
                     $[ if d_relationship.relationship.name == defaultTabRelationship.relationship.name ]
-                        $[ capture defaultTabIndex]${d_relationship#index} + 1$[/capture]
+                        $[ capture defaultTabIndex ]${d_relationship#index} + 1$[/ capture ]
                     $[/ if ]
                 $[/ foreach ]
 
@@ -108,6 +108,7 @@ $[/ send ]
             List {
                 $[ let d_attributeList = d_entity.declaredDomainAttributes ]
                 $[ foreach d_attribute in d_attributeList if d_attribute.attribute != null && !d_attribute.attribute.type.isEntityType && !d_attribute.attribute.isArray ]
+            // Attribute: ${d_attribute.name}
             Section() {
                 Text("${d_attribute|title|uppercase}")
                     .font(.footnote)
@@ -146,6 +147,70 @@ $[/ send ]
                     .multilineTextAlignment(.leading)
                     .padding(EdgeInsets(top: 8.0, leading: 12.0, bottom: 8.0, trailing: 12.0))
                     .listRowBackground(self.valueBackgroundColor)
+            }
+            .listRowInsets(EdgeInsets())
+
+                $[/ foreach ]
+                $[ let d_relationshipList = d_entity.declaredDomainRelationships ]
+                $[ foreach d_relationship in d_relationshipList if d_relationship.to != null && d_relationship.to.isOne ]
+                    $[ let d_toEntity = d_relationship.to.entity|domain ]
+                    $[ if d_toEntity == null ]
+                        $[ continue ]
+                    $[/ if ]
+                    $[ let toAttributeName = d_relationship.tagValue("display:attribute") ]
+                    $[ if toAttributeName != null && !d_toEntity.entity.hasAttributeNamed(toAttributeName) ]
+                        $[ log error ]The "display:attribute" tag specifies an attribute "${toAttributeName}" that does not exist on entity "${d_toEntity.name}"$[/ log ]
+                        $[ let toAttributeName = null ]
+                    $[/ if ]
+                    $[ if toAttributeName == null ]
+                        $[ if d_toEntity.entity.hasAttributeNamed("identifier") ]
+                            $[ let toAttributeName = "identifier" ]
+                        $[/ if ]
+                    $[/ if ]
+                    $[ if toAttributeName == null ]
+                        $[ continue ]
+                    $[/ if ]
+                    $[ let d_attribute = d_toEntity.getDomainAttributeByName(toAttributeName) ]
+            // Relationship: ${d_relationship.name} to ${d_toEntity.name}.${d_attribute.name} [${toAttributeName}]
+            Section() {
+                Text("${d_relationship|title|uppercase}")
+                    .font(.footnote)
+                    .fontWeight(.black)
+                    .foregroundColor(self.titleTextColor)
+                    .multilineTextAlignment(.leading)
+                    .padding(EdgeInsets(top: 8.0, leading: 12.0, bottom: 8.0, trailing: 12.0))
+                    .listRowBackground(self.titleBackgroundColor)
+
+                    $[ let useMarkdown = d_attribute.hasTag("markdown") ]
+                    $[ let formatAsCode = d_attribute.hasTag("format:code") ]
+                    $[ let type = d_attribute.attribute.type ]
+                    $[ call DefaultConstant(type: type)->(constant: defaultValueForType) ]
+                    $[ let fieldName = d_attribute|domain:JSONDTO|name ]
+                    $[ let fieldExpr = inputVariable + "." + d_relationship.name + "?." + fieldName + "OrDefault ?? \"\"" ]
+                    $[ switch type ]
+                        $[ case date ]
+                            $[ capture fieldExpr ](${fieldExpr}).description$[/ capture ]
+                        $[ case enum ]
+                            $[ capture fieldExpr ](${fieldExpr}).rawValue$[/ capture ]
+                        $[ case string ]
+                        $[ default ]
+                            $[ let fieldExpr = "String(" + fieldExpr + ")" ]
+                    $[/ switch ]
+                let valueString = ${fieldExpr}
+                    $[ if useMarkdown || formatAsCode ]
+                        $[ let valueStringExpr = "valueString" ]
+                        $[ if formatAsCode ]
+                            $[ capture valueStringExpr ]"`" + ${valueStringExpr} + "`"$[/ capture ]
+                        $[/ if ]
+                let attributedString = (try? AttributedString(markdown: ${valueStringExpr})) ?? AttributedString(valueString)
+                    $[/ if ]
+                Text($[ if useMarkdown || formatAsCode ]attributedString$[ else ]valueString$[/ if ])
+                    .font(.body)
+                    .foregroundColor(self.valueTextColor)
+                    .multilineTextAlignment(.leading)
+                    .padding(EdgeInsets(top: 8.0, leading: 12.0, bottom: 8.0, trailing: 12.0))
+                    .listRowBackground(self.valueBackgroundColor)
+
             }
             .listRowInsets(EdgeInsets())
 
